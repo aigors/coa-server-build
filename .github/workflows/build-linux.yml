@@ -44,6 +44,9 @@ on:
         required: false
   workflow_dispatch:
     inputs:
+      upstream_ref:
+        description: Upstream (jealous-sound) ref checked for integration into the core (fork addition)
+        default: main
       release_version:
         description: Optional release version (0.yyMMdd.build)
         default: ''
@@ -87,6 +90,7 @@ jobs:
       SCALING_REF: ${{ inputs.scaling_ref }}
       SQUID_REF: ${{ inputs.squid_ref }}
       MANAGER_REF: ${{ inputs.manager_ref }}
+      UPSTREAM_REF: ${{ inputs.upstream_ref }}
     outputs:
       core: ${{ steps.lock.outputs.core }}
       bots: ${{ steps.lock.outputs.bots }}
