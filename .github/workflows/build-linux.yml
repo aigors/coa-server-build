@@ -247,6 +247,8 @@ jobs:
           for pack in mod-coa-tbc-content mod-coa-wotlk-content; do
             cp -r "_scaling/content-packs/$pack" "_core/modules/$pack"
           done
+      - name: Fork-only Manager fixes for Linux
+        run: python3 -I scripts/fork-core-fixes.py --manager _manager
       - name: Build coa-release
         run: cargo build --release -p coa-release --manifest-path _manager/Cargo.toml
       - name: Assemble the release tree

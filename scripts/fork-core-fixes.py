@@ -8,8 +8,15 @@ The sources are compiled with MSVC for the Windows release, which accepts two th
 2. A string literal in the bots' BotTalentBuilds.cpp holds a raw carriage return (byte 0x0D) where the escape `\r`
    was meant; clang reads it as a line break and the literal is left open. It becomes the escape.
 
+The Manager's release tool (coa-release) is also built here, and one of its scans only ever met Windows:
+
+3. Collecting module SQL lists every entry of the core's modules/ folder, files included (CMakeLists.txt...), and reads
+   <entry>/data/sql/db-*. Windows reports a path through a file as not found, which the scan skips; Linux reports
+   "Not a directory", which aborts the schema contract. Only directories are scanned.
+
 Each fix is skipped when the source already has it, and fails the build when neither form is found.
 Usage: python3 scripts/fork-core-fixes.py CORE_DIR
+       python3 scripts/fork-core-fixes.py --manager MANAGER_DIR
 """
 import sys
 from pathlib import Path
@@ -30,9 +37,19 @@ FIXES = [
     ]),
 ]
 
+MANAGER_FIXES = [
+    ("crates/coa-core/src/release.rs", [
+        ('        let mut mods = entries(&core.join("modules"))?;\n',
+         '        let mut mods: Vec<_> = entries(&core.join("modules"))?\n'
+         '            .into_iter()\n'
+         '            .filter(|e| e.path().is_dir())\n'
+         '            .collect();\n'),
+    ]),
+]
 
-def main(core: Path) -> int:
-    for rel, pairs in FIXES:
+
+def main(core: Path, fixes) -> int:
+    for rel, pairs in fixes:
         path = core / rel
         data = path.read_bytes().decode("utf-8")
         newline = "\r\n" if "\r\n" in data else "\n"
@@ -51,4 +68,6 @@ def main(core: Path) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(Path(sys.argv[1])))
+    if sys.argv[1] == "--manager":
+        sys.exit(main(Path(sys.argv[2]), MANAGER_FIXES))
+    sys.exit(main(Path(sys.argv[1]), FIXES))
